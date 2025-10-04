@@ -4,10 +4,16 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/felisest/comproxy/internal/infrastructure/config"
+
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command{}
+var rootCmd = &cobra.Command{
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		_ = config.LoadConfig("config")
+	},
+}
 
 func init() {
 	rootCmd.AddCommand(serviceCmd)

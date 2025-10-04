@@ -1,0 +1,8 @@
+proxy:
+  RemoteHost: "https://jsonplaceholder.typicode.com"
+  TestingHost: "https://jsonplaceholder.typicode.com"
+  Path: "/users"
+  Rate: 1
+  Server:
+    Port: 8082
+    Timeout: 3

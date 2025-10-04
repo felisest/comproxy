@@ -6,21 +6,19 @@ import (
 )
 
 type CustomProxy struct {
-	proc func([]byte, []byte) error
-
-	cfg *config.Config
-
+	Proc       func([]byte, []byte) error
+	cfg        config.Configuration
 	shutdowner fx.Shutdowner
 }
 
 func NewCustomProxy(
 	proc func([]byte, []byte) error,
-	cfg *config.Config,
+	cfg config.Configuration,
 	shutdowner fx.Shutdowner,
 ) *CustomProxy {
 	return &CustomProxy{
 		cfg:  cfg,
-		proc: proc,
+		Proc: proc,
 	}
 }
 

@@ -1,19 +1,24 @@
 package config
 
-type Config struct {
+import "time"
+
+type Configuration struct {
+	Proxy Proxy
+}
+
+type Proxy struct {
 	RemoteHost  string
 	TestingHost string
 	Path        string
-	Port        string
-	Rate        int64
+	Rate        int64 //Trigger rate 1:N
+	Server      Server
 }
 
-func NewConfig() *Config {
-	return &Config{
-		RemoteHost:  "https://jsonplaceholder.typicode.com",
-		TestingHost: "https://jsonplaceholder.typicode.com",
-		Path:        "/users",
-		Port:        "8082",
-		Rate:        1,
-	}
+type Server struct {
+	Port    string
+	Timeout int
+}
+
+func (w *Server) GetTimeout() time.Duration {
+	return time.Duration(w.Timeout) * time.Second
 }

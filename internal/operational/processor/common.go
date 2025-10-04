@@ -1,19 +1,19 @@
 package processor
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	jsoniter "github.com/json-iterator/go"
 )
 
 func CompareJson(json1, json2 []byte) (bool, string) {
 	var obj1, obj2 any
-	if err := json.Unmarshal(json1, &obj1); err != nil { //TODO jsoniter
+	if err := jsoniter.Unmarshal(json1, &obj1); err != nil {
 		return false, err.Error()
 	}
-	if err := json.Unmarshal(json2, &obj2); err != nil { //TODO jsoniter
+	if err := jsoniter.Unmarshal(json2, &obj2); err != nil {
 		return false, err.Error()
 	}
 
