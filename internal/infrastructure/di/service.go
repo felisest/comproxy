@@ -38,7 +38,7 @@ func createApp() fx.Option {
 		),
 		fx.Provide(
 			processor.NewResponseComparer,
-			func(p *processor.ResponseComparer) func([]byte, []byte) error {
+			func(p *processor.ResponseComparer) func(...[]byte) error {
 				return p.GetProcedure()
 			},
 			fx.Annotate(

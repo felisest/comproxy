@@ -26,27 +26,27 @@ func NewResponseComparer(
 	}
 }
 
-func (p *ResponseComparer) Process(request []byte, response []byte) error {
+// [0] Request, [1] Response by remote
+func (p *ResponseComparer) Process(data ...[]byte) error {
 	p.counter.Inc()
 
 	if p.counter.Value() > p.cfg.Proxy.Rate-1 {
 		p.counter.Reset()
 
 		//Request remote tested
-		responseRemote, _ := p.requester.Post(request)
+		responseRemote, _ := p.requester.Post(data[0])
 
 		//Compare results
-		ok, diff := CompareJson(response, responseRemote)
+		ok, diff := CompareJson(data[1], responseRemote)
 
 		if !ok {
 			p.logs.Warn("Differ: %s", diff)
 		}
-
 	}
 
 	return nil
 }
 
-func (p *ResponseComparer) GetProcedure() func([]byte, []byte) error {
+func (p *ResponseComparer) GetProcedure() func(...[]byte) error {
 	return p.Process
 }

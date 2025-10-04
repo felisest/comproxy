@@ -27,7 +27,6 @@ func NewHttpRequest(
 func (r *HttpRequest) Post(request []byte) ([]byte, error) {
 	req, err := http.NewRequest("POST", r.cfg.Proxy.TestingHost+r.cfg.Proxy.Path, bytes.NewBuffer(request))
 	if err != nil {
-
 		return []byte{}, err
 	}
 

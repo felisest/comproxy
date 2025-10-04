@@ -6,22 +6,18 @@ import (
 )
 
 type CustomProxy struct {
-	Proc       func([]byte, []byte) error
+	processor  func(...[]byte) error
 	cfg        config.Configuration
 	shutdowner fx.Shutdowner
 }
 
 func NewCustomProxy(
-	proc func([]byte, []byte) error,
+	processor func(...[]byte) error,
 	cfg config.Configuration,
 	shutdowner fx.Shutdowner,
 ) *CustomProxy {
 	return &CustomProxy{
-		cfg:  cfg,
-		Proc: proc,
+		cfg:       cfg,
+		processor: processor,
 	}
-}
-
-func (p *CustomProxy) SetProcessor(proc func([]byte, []byte)) {
-	//p.proc = proc
 }

@@ -25,21 +25,19 @@ type FastHttpProxy struct {
 
 func NewFastHttpProxy(
 	ctx context.Context,
-	proxy CustomProxy,
+	proxy *CustomProxy,
 	logs port.ILogger,
 	shutdowner fx.Shutdowner,
 ) *FastHttpProxy {
-
 	return &FastHttpProxy{
 		ctx:         ctx,
-		CustomProxy: proxy,
+		CustomProxy: *proxy,
 		logs:        logs,
 		shutdowner:  shutdowner,
 	}
 }
 
 func (p *FastHttpProxy) Run() {
-
 	router := provideRoutes(p.requestHandler)
 
 	server := fasthttp.Server{
@@ -68,7 +66,6 @@ func (p *FastHttpProxy) Run() {
 
 		select {
 		case sig := <-sigCh:
-			_ = sig
 			p.logs.Info("Shutting down. Received signal: ", sig)
 
 			ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout*time.Second)
@@ -79,7 +76,6 @@ func (p *FastHttpProxy) Run() {
 			}
 
 		case err := <-servChan:
-			_ = err
 			p.logs.Error("Server error ", err)
 		}
 	}()
@@ -110,7 +106,7 @@ func (p *FastHttpProxy) requestHandler(ctx *fasthttp.RequestCtx) {
 		resp.CopyTo(&ctx.Response)
 
 		response := resp.Body()
-		p.Proc(request, response)
+		p.processor(request, response)
 
 	} else {
 		ctx.Error("Not found", fasthttp.StatusNotFound)
@@ -118,7 +114,6 @@ func (p *FastHttpProxy) requestHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func provideRoutes(h fasthttp.RequestHandler) *router.Router {
-
 	r := router.New()
 
 	r.PanicHandler = func(ctx *fasthttp.RequestCtx, i interface{}) {
@@ -126,8 +121,7 @@ func provideRoutes(h fasthttp.RequestHandler) *router.Router {
 		ctx.Response.SetBodyString("Internal server error")
 	}
 
-	// r.GET(ProbeLiveness, handlers.NewLiveHandler().LiveHandler)
-	// r.GET(ProbeReadiness, handlers.NewReadyHandler().ReadyHandler)
+	// Liveness, Readiness probes
 
 	r.ANY("/{path:*}", h)
 
