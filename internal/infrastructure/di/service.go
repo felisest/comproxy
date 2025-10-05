@@ -7,6 +7,7 @@ import (
 	"github.com/felisest/comproxy/internal/infrastructure/logs"
 	"github.com/felisest/comproxy/internal/infrastructure/proxy"
 	"github.com/felisest/comproxy/internal/infrastructure/web"
+	"github.com/felisest/comproxy/internal/operational/comparer"
 	"github.com/felisest/comproxy/internal/operational/port"
 	"github.com/felisest/comproxy/internal/operational/processor"
 
@@ -25,8 +26,6 @@ func createApp() fx.Option {
 		fx.Provide(
 			context.Background,
 			config.GetConfig,
-		),
-		fx.Provide(
 			fx.Annotate(
 				logs.NewZapLogger,
 				fx.As(new(port.ILogger)),
@@ -41,6 +40,10 @@ func createApp() fx.Option {
 			func(p *processor.ResponseComparer) func(...[]byte) error {
 				return p.GetProcedure()
 			},
+			fx.Annotate(
+				comparer.NewSimpleComparer,
+				fx.As(new(port.IComparer)),
+			),
 			fx.Annotate(
 				web.NewHttpRequest,
 				fx.As(new(port.IRequester)),

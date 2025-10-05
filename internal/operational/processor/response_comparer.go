@@ -2,7 +2,7 @@ package processor
 
 import (
 	"github.com/felisest/comproxy/internal/infrastructure/config"
-	counter "github.com/felisest/comproxy/internal/operational/counter"
+	counter "github.com/felisest/comproxy/internal/infrastructure/counter"
 	"github.com/felisest/comproxy/internal/operational/port"
 )
 
@@ -11,18 +11,21 @@ type ResponseComparer struct {
 	requester port.IRequester
 	logs      port.ILogger
 	cfg       config.Configuration
+	comparer  port.IComparer
 }
 
 func NewResponseComparer(
 	cfg config.Configuration,
 	requester port.IRequester,
 	logs port.ILogger,
+	comparer port.IComparer,
 ) *ResponseComparer {
 	return &ResponseComparer{
 		counter:   *counter.NewEventCounter(),
 		requester: requester,
 		cfg:       cfg,
 		logs:      logs,
+		comparer:  comparer,
 	}
 }
 
@@ -34,10 +37,14 @@ func (p *ResponseComparer) Process(data ...[]byte) error {
 		p.counter.Reset()
 
 		//Request remote tested
-		responseRemote, _ := p.requester.Post(data[0])
+		responseRemote, err := p.requester.Post(data[0])
+		if err != nil {
+			p.logs.Error("[PROCESS] Request error: ", err)
+			return err
+		}
 
 		//Compare results
-		ok, diff := CompareJson(data[1], responseRemote)
+		ok, diff := p.comparer.Compare(data[1], responseRemote)
 
 		if !ok {
 			p.logs.Warn("Differ: %s", diff)

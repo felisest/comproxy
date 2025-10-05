@@ -1,4 +1,4 @@
-package processor
+package comparer
 
 import (
 	"fmt"
@@ -8,7 +8,14 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-func CompareJson(json1, json2 []byte) (bool, string) {
+type SimpleComparer struct {
+}
+
+func NewSimpleComparer() *SimpleComparer {
+	return &SimpleComparer{}
+}
+
+func (c *SimpleComparer) Compare(json1, json2 []byte) (bool, string) {
 	var obj1, obj2 any
 	if err := jsoniter.Unmarshal(json1, &obj1); err != nil {
 		return false, err.Error()

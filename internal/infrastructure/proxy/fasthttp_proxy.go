@@ -49,9 +49,10 @@ func (p *FastHttpProxy) Run() {
 		MaxRequestsPerConn: 1,
 	}
 
-	servChan := make(chan error)
+	errChan := make(chan error)
 	go func() {
-		servChan <- server.ListenAndServe(":" + p.cfg.Proxy.Server.Port)
+		p.logs.Info("[FASTHTTP] Proxy starting on: ", p.cfg.Proxy.Server.Port)
+		errChan <- server.ListenAndServe(":" + p.cfg.Proxy.Server.Port)
 	}()
 
 	go func() {
@@ -59,35 +60,34 @@ func (p *FastHttpProxy) Run() {
 			_ = p.shutdowner.Shutdown()
 		}()
 
-		p.logs.Info("Proxy is running...")
+		p.logs.Info("[FASTHTTP] Proxy is running...")
 
 		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 		select {
 		case sig := <-sigCh:
-			p.logs.Info("Shutting down. Received signal: ", sig)
+			p.logs.Info("[FASTHTTP] Shutting down. Received signal: ", sig)
 
 			ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout*time.Second)
 			defer cancel()
 
 			if err := server.ShutdownWithContext(ctx); err != nil {
-				p.logs.Error("Shutdown error: ", err)
+				p.logs.Error("[FASTHTTP] Shutdown error: ", err)
 			}
 
-		case err := <-servChan:
-			p.logs.Error("Server error ", err)
+		case err := <-errChan:
+			p.logs.Error("[FASTHTTP] ListenAndServe error: ", err)
+
 		}
 	}()
 }
 
 func (p *FastHttpProxy) requestHandler(ctx *fasthttp.RequestCtx) {
 	if string(ctx.Path()) == p.cfg.Proxy.Path && ctx.IsPost() {
-
-		body := ctx.Request.Body()
-
-		request := make([]byte, len(body))
-		copy(request, body)
+		requestBody := ctx.Request.Body()
+		request := make([]byte, len(requestBody))
+		copy(request, requestBody)
 
 		req := fasthttp.AcquireRequest()
 		defer fasthttp.ReleaseRequest(req)
@@ -105,18 +105,20 @@ func (p *FastHttpProxy) requestHandler(ctx *fasthttp.RequestCtx) {
 
 		resp.CopyTo(&ctx.Response)
 
-		response := resp.Body()
+		responseBody := resp.Body()
+		response := make([]byte, len(responseBody))
+		copy(response, responseBody)
 		p.processor(request, response)
 
 	} else {
-		ctx.Error("Not found", fasthttp.StatusNotFound)
+		ctx.Error("[FASTHTTP] Not found", fasthttp.StatusNotFound)
 	}
 }
 
 func provideRoutes(h fasthttp.RequestHandler) *router.Router {
 	r := router.New()
 
-	r.PanicHandler = func(ctx *fasthttp.RequestCtx, i interface{}) {
+	r.PanicHandler = func(ctx *fasthttp.RequestCtx, i any) {
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		ctx.Response.SetBodyString("Internal server error")
 	}
